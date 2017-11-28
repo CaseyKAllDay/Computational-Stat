@@ -1,0 +1,139 @@
+---
+title: 'STAT 206 Lab 6'
+output: pdf_document
+---
+
+**Due Monday, November 13, 5:00 PM**
+
+***General instructions for labs***: You are encouraged to work in pairs to complete the lab.  Labs must be completed as an R Markdown file.  Be sure to include your lab partner (if you have one) and your own name in the file.  Give the commands to answer each question in its own code block, which will also produce plots that will be automatically embedded in the output file. Each answer must be supported by written statements as well as any code used. 
+
+***Agenda***: Accept-Reject algorithm
+
+1. Write a function to simulate $n$ $N (0,1)$ random variates using the Accept-Reject algorithm with a Cauchy candidate.
+
+```{r}
+
+#First to solve for M we have the normal desnity function in the numerator divided by the Cauchy 
+#density function in the denominator
+# 2pi^-12*exp((-x^2)/2) / pi(1 + x^2)
+#This is maximized when the denominator is small as possible
+#this means we solve for when x = 0
+
+M = 1.55760
+
+runs = 100
+ar_lab = function(n=runs) {
+  i = 1
+  count = 0
+  x = double(n)
+  const_u = 1 / (sqrt(2*pi))
+  while ( i <= n+1) {
+    count = count + 1
+    y = rcauchy(1)
+    u = runif(1)
+    temp = (1/M) * (u/y)
+    if(u < temp) {
+      x[i] = y
+      i = i + 1
+    }
+  }
+  return(x)
+}
+
+test = ar_lab(10000)
+mean(test)
+hist(test)
+
+
+```
+
+
+2. Simulate 1000 $N (0,1)$ random variates using your function to estimate $E[ Y^3 \log ( 1 + |Y| ) ]$ and $Pr(Y \in [-1,2])$.  Be sure to include a Monte Carlo standard error with your estimates.
+
+```{r}
+
+#We use our last function to estimate the function above for 1000 runs. We also get a sum of how many runs were bertween -1 and 2. We finally divide that sum by the number for runs for the probability that the contraint occured. 
+
+runs = 100
+test = ar_lab(runs)
+
+temp = function(x) {
+  (x^3) * (log( 1 + abs(x)))
+}
+
+
+second = temp(test)
+second
+
+hist(second)
+
+cond1 = sum(second <= 2 & second >=-1)
+#cond1
+
+prob = cond1 / runs
+prob
+
+sdsecond = sd(second)
+sdsecond
+
+se_second = sdsecond / sqrt(runs)
+se_second
+
+```
+
+3. What was the acceptance rate of the Accept-Reject algorithm?  Is this close to the theoretical acceptance rate?
+
+```{r}
+
+#The area of the window is about 16 and the area under the curve is about 4.3 so
+# the theoretical acceptance should be near 25%
+#However I have a bug and I seem to get 100% acceptance
+
+curve(temp(x), xlim = c(-1,2))
+
+```
+
+4. Write a function that continues simulation until the sample size is large enough so that your Monte Carlo error is less than $\epsilon = 0.01$ for estimating a general statistic `stat` (which will be a function).  You function should also return the observed acceptance rate of the Accept-Reject algorithm and a Monte Carlo standard error.
+
+```{r}
+
+#This function takes two arguments, 1 is the function from problem 2 and the second is the stopping 
+#condition of epsilon. Here we use a while loop so the loop terminates when the stopping condition of
+#epsilon of .01 has been met. We then have a nested for loop that looks at each value in the output
+#of the function and stores the sd in a vector, we calculate the se every time we go through the loop
+#when the se is below our stopping condition the loop teminates
+#we can see that it took 10002 loops. However for some reason I'm getting NA for the standard error
+
+stat = 1
+stds = c()
+i = 1
+count = 0
+stopper = function(estimator, stat) {
+  while( stat >= .01) {
+    for(value in estimator) {
+      i = i + 1
+      std = sd(value)
+      stds = c(stds, std)
+      final_std = sd(stds)
+      se = stds / sqrt(i)
+      stat = se
+      done = final_std/i
+      
+    }
+    return(c(i, done))
+  }
+}
+
+stopper(ar_lab(10000), 1)
+
+```
+
+5. Use your function to estimate $E[ Y^3 \log ( 1 + |Y| ) ]$ and $Pr(Y \in [-1,2])$ with $\epsilon = 0.01$. Report your estimates along with confidence intervals based on the Monte Carlo standard error.  What was the acceptance rate?
+
+```{r}
+
+#this turns out very simliar because i've introduced a bug that I don't understand in my code
+
+stopper(temp(test), 1)
+
+```

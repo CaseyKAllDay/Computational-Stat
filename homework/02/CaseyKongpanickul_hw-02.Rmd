@@ -1,0 +1,302 @@
+---
+title: "STAT 206 Homework 2"
+output: pdf_document
+name: Casey Kongpanickul
+---
+
+**Due Monday, October 16, 5:00 PM**
+
+***General instructions for homework***: Homework must be completed as an R Markdown file.  Be sure to include your name in the file.  Give the commands to answer each question in its own code block, which will also produce plots that will be automatically embedded in the output file. Each answer must be supported by written statements as well as any code used.  (Examining your various objects in the "Environment" section of RStudio is insufficient -- you must use scripted commands.)
+
+The data set at [http://www.stat.cmu.edu/~cshalizi/uADA/13/hw/01/calif_penn_2011.csv] contains information about the housing stock of California and Pennsylvania, as of 2011.  Information as aggregated into "Census tracts", geographic regions of a few thousand people which are supposed to be fairly homogeneous economically and socially.
+
+1. _Loading and cleaning_
+    a. Load the data into a dataframe called `ca_pa`.
+
+```{r}
+
+#Since this is a csv file. We will use the read.csv functions instead of read.table like last week
+#To read the table I am placing the URL in its own variable. Also I am placing the data in an object named data
+
+WWW = "http://www.stat.cmu.edu/~cshalizi/uADA/13/hw/01/calif_penn_2011.csv"
+ca_pa = read.csv(WWW)
+class(data)
+head(data, 370)
+
+```
+    b. How many rows and columns does the dataframe have?
+    
+```{r}
+
+# to find the number of columns and rows we will use the nrow and ncol function like we did in the lab. 
+# number of columns is also displayed in the previous cell at the bottom of the head function used
+
+nrow(ca_pa)
+ncol(ca_pa)
+
+```
+    c. Run this command, and explain, in words, what this does:
+    
+```
+colSums(apply(ca_pa,c(1,2),is.na))
+```
+
+```{r}
+
+colSums(apply(ca_pa,c(1,2),is.na))
+
+#The outside function is to get a sum of something which will be determined by the given arguments
+#The apply is used for iteration, the first argument for apply is the dataframe
+#The second argument specifies that the apply will be used on rows and columns
+#The third argument is the function, or what we want to get a sum of in this case
+#in other words we are counting the number of N/As per row and column in the data frame.
+
+```
+    d. The function `na.omit()` takes a dataframe and returns a new dataframe, omitting any row containing an NA value.  Use it to purge the data set of rows with incomplete data.
+    
+```{r}
+
+ca_pa = na.omit(ca_pa)
+#apply(ca_pa,c(1,2),is.na)
+#colSums(apply(ca_pa,c(1,2),is.na))
+
+```
+    e. How many rows did this eliminate?
+    
+```{r}
+
+# Above we can see that it says 3,575 rows. We originally had 3876. We can use r as a calculator for this
+3876-3575
+
+```
+    f. Are your answers in (c) and (e) compatible? Explain.
+    
+```{r}
+
+# Not quite, in (c) we are getting the counts of na per attribute. There can be multiple na values per row 
+# So the total number of na in the data frame is not going to equal the number of rows that are removed
+# by the omit.na function
+
+```
+
+2. _This Very New House_  
+    a. The variable `Built_2005_or_later` indicates the percentage of houses in each Census tract built since 2005.  Plot median house prices against this variable.
+    
+```{r}
+
+#using the plot function the first argument will be Built_2005_or_Later and the second for the y axis is median
+
+plot(ca_pa$Built_2005_or_later, ca_pa$Median_house_value)
+
+```
+    b. Make a new plot, or pair of plots, which breaks this out by state.  Note that the state is recorded in the `STATEFP` variable, with California being state 6 and Pennsylvania state 42.
+    
+```{r}
+
+# I am going to make two subsets of data to makes these plots by state, one for ca and one for pa
+
+class(ca_pa)
+names(ca_pa)
+
+cali = subset(ca_pa, STATEFP == 6, select = c('Built_2005_or_later', 'Median_house_value'))
+nrow(cali)
+plot(cali$Built_2005_or_later, cali$Median_house_value)
+
+pa = subset(ca_pa, STATEFP == 42)
+nrow(pa)
+plot(pa$Built_2005_or_later, pa$Median_house_value)
+
+```
+
+3. _Nobody Home_  
+The vacancy rate is the fraction of housing units which are not occupied.  The dataframe contains columns giving the total number of housing units for each Census tract, and the number of vacant housing units.  
+    a. Add a new column to the dataframe which contains the vacancy rate.  What are the minimum, maximum, mean, and median vacancy rates?
+    
+```{r}
+
+#we are going to use the transform function to add another column tothe ca_pa dataframe which will be
+#the ratio of vacant units to total units
+#finally we will get a summary of that column for all the values we want
+
+ca_pa_new = transform(ca_pa, vac_rat = ca_pa$Vacant_units / ca_pa$Total_units)
+summary(ca_pa_new$vac_rat)
+
+#minimum: 0
+#max : 1
+#mean: .08918
+#median: .06766
+
+```
+
+    b. Plot the vacancy rate against median house value.
+    
+```{r}
+
+#again using the plot function but this time drawing from the new data frame with the vac_rat column
+
+plot(ca_pa_new$vac_rat, ca_pa_new$Median_house_value)
+
+```
+    c. Plot vacancy rate against median house value separately for California and for Pennsylvania.  Is there a difference?
+    
+```{r}
+
+cali2 = subset(ca_pa_new, STATEFP == 6, select = c('vac_rat', 'Median_house_value'))
+nrow(cali2)
+plot(cali2$vac_rat, cali2$Median_house_value)
+
+pa2 = subset(ca_pa_new, STATEFP == 42, select = c('vac_rat', 'Median_house_value'))
+nrow(pa2)
+plot(pa2$vac_rat, pa2$Median_house_value)
+
+```
+    
+4. The column `COUNTYFP` contains a numerical code for counties within each state.  We are interested in Alameda County (county 1 in California), Santa Clara (county 85 in California), and Allegheny County (county 3 in Pennsylvania).
+    a. Explain what the block of code at the end of this question is supposed to accomplish, and how it does it.
+    
+```{r}
+
+#The code ultimatly gets the average median house value for lines items that are in california AND alameda county
+#
+#
+#line by line explanation:
+#The first line sets an empty vector to the object name "acca"
+#The seccond line begins a for loop that iterates through the dataframe beginning at the first row and going
+#to the last, line by line
+#The next line is an if statement to figure out if the STATEFP has a value of 6, if so it will continue to the 
+#next if statement, if not it will restart the for loop (looking for california)
+#The next if statement determines if the COUNTYFP is 1 (looking for alameda county)
+#If the above row number is saved in the vector acca
+#Next the code creates a vector called accamhv
+#The second for loop goes through each value in the value in acca and looks up the value in the 10th column
+#this value is the median house value and it is saved to a vector of length = to length of acca
+#NOTE some values are NA which ultimately ends up being spit out of the median function, These NA values need
+#to be handled to get a numeric value out
+
+```
+    b. Give a single line of R which gives the same final answer as the block of code.  Note: there are at least two ways to do this; you just have to find one.
+    
+```{r}
+
+#This code calls median first and the argument passed is to grab the Median house value column and further extract
+#COUNTYFP equal to 1
+
+median(ca_pa$Median_house_value['COUNTYFP' == 1])
+
+
+
+```
+
+    c. For Alameda, Santa Clara and Allegheny Counties, what were the average percentages of housing built since 2005?
+    
+```{r}
+
+#For this section we just need to slice the data so we get the housing built since 2005 and the county we want
+#then we have the percentages of houses built for those 3 countys and we can find the avg for each county
+
+alameda = subset(ca_pa, COUNTYFP == 1, select = c('COUNTYFP', 'Built_2005_or_later'))
+alameda2 = na.omit(alameda)
+mean(alameda2$Built_2005_or_later)
+
+santa = subset(ca_pa, COUNTYFP == 85, select = c('COUNTYFP', 'Built_2005_or_later'))
+santa2 = na.omit(santa)
+mean(santa2$Built_2005_or_later)
+
+alle = subset(ca_pa, COUNTYFP == 3, select = c('COUNTYFP', 'Built_2005_or_later'))
+alle2 = na.omit(alle)
+mean(alle2$Built_2005_or_later)
+
+```
+
+    d. The `cor` function calculates the correlation coefficient between two variables.  What is the correlation between median house value and the percent of housing built since 2005 in (i) the whole data, (ii) all of California, (iii) all of Pennsylvania, (iv) Alameda County, (v) Santa Clara County and (vi) Allegheny County?
+    
+```{r}
+
+#correlation between median house value and perfect of housing build since 2005
+#To use the cor function for these attributes we need to handle non-numeric values
+#For this we use the optional argument use = "complete.obs"
+
+#the whole data
+
+cor(ca_pa$Median_house_value, ca_pa$Built_2005_or_later, use = "complete.obs", method = "pearson")
+
+#all california
+
+calsub = subset(ca_pa, STATEFP == 6, select = c('Median_house_value', 'Built_2005_or_later'))
+#calsub
+
+cor(calsub, use = "complete.obs", method = "pearson")
+
+#all of Pennsylvania
+
+pasub = subset(ca_pa, STATEFP == 42, select = c('Median_house_value', 'Built_2005_or_later'))
+#pasub
+
+cor(pasub, use = "complete.obs", method = "pearson")
+
+#Alameda county
+
+acsub = subset(ca_pa, COUNTYFP == 1, select = c('Median_house_value', 'Built_2005_or_later'))
+#acsub
+
+cor(acsub, use = "complete.obs", method = "pearson")
+
+#santa clara county
+
+scsub = subset(ca_pa, COUNTYFP == 85, select = c('Median_house_value', 'Built_2005_or_later'))
+#scsub
+
+cor(scsub, use = "complete.obs", method = "pearson")
+
+#Allegheny County
+
+alsub = subset(ca_pa, COUNTYFP == 3, select = c('Median_house_value', 'Built_2005_or_later'))
+#alsub
+
+cor(alsub, use = "complete.obs", method = "pearson")
+
+```
+
+    e. Make three plots, showing median house values against median income, for Alameda, Santa Clara, and Allegheny Counties.  (If you can fit the information into one plot, clearly distinguishing the three counties, that's OK too.)
+    
+```{r}
+
+#I will try to condense the code a little bit here by using the $ to call out the columns I want after 
+# making a subset of the data for the desired counties
+
+# alameda county
+
+alcounty = subset(ca_pa, COUNTYFP == 1, select = c('Median_house_value', 'Median_household_income'))
+plot(alcounty)
+
+# santa clara county
+
+sccounty = subset(ca_pa, COUNTYFP == 85, select = c('Median_house_value', 'Median_household_income'))
+plot(sccounty)
+
+# allegheny county
+
+allecounty = subset(ca_pa, COUNTYFP == 3, select = c('Median_house_value', 'Median_household_income'))
+plot(allecounty)
+
+
+```
+
+
+```{r, eval=FALSE}
+acca <- c()
+for (tract in 1:nrow(ca_pa)) {
+  if (ca_pa$STATEFP[tract] == 6) {
+    if (ca_pa$COUNTYFP[tract] == 1) {
+      acca <- c(acca, tract)
+    }
+  }
+}
+accamhv <- c()
+for (tract in acca) {
+  accamhv <- c(accamhv, ca_pa[tract,10])
+}
+acca
+```
+
+

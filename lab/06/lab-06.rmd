@@ -1,0 +1,16 @@
+---
+title: 'STAT 206 Lab 6'
+output: pdf_document
+---
+
+**Due Monday, November 13, 5:00 PM**
+
+***General instructions for labs***: You are encouraged to work in pairs to complete the lab.  Labs must be completed as an R Markdown file.  Be sure to include your lab partner (if you have one) and your own name in the file.  Give the commands to answer each question in its own code block, which will also produce plots that will be automatically embedded in the output file. Each answer must be supported by written statements as well as any code used. 
+
+***Agenda***: Accept-Reject algorithm
+
+1. Write a function to simulate $n$ $N (0,1)$ random variates using the Accept-Reject algorithm with a Cauchy candidate.
+2. Simulate 1000 $N (0,1)$ random variates using your function to estimate $E[ Y^3 \log ( 1 + |Y| ) ]$ and $Pr(Y \in [-1,2])$.  Be sure to include a Monte Carlo standard error with your estimates.
+3. What was the acceptance rate of the Accept-Reject algorithm?  Is this close to the theoretical acceptance rate?
+4. Write a function that continues simulation until the sample size is large enough so that your Monte Carlo error is less than $\epsilon = 0.01$ for estimating a general statistic `stat` (which will be a function).  You function should also return the observed acceptance rate of the Accept-Reject algorithm and a Monte Carlo standard error.
+5. Use your function to estimate $E[ Y^3 \log ( 1 + |Y| ) ]$ and $Pr(Y \in [-1,2])$ with $\epsilon = 0.01$. Report your estimates along with confidence intervals based on the Monte Carlo standard error.  What was the acceptance rate?
